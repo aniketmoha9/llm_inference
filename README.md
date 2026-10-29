@@ -177,7 +177,7 @@ For a 128k context window:
 
 ---
 
-## 🌐 Private Remote Hosting & Live Telemetry Dashboard
+## 🌐 Private Remote Hosting, LLM Playground & Telemetry Dashboard
 
 Module [`08_remote_serving`](./08_remote_serving/) turns your machine into a 24/7 private AI inference server accessible globally from your mobile phone or another laptop:
 
@@ -185,18 +185,24 @@ Module [`08_remote_serving`](./08_remote_serving/) turns your machine into a 24/
 python3 08_remote_serving/web_chat_server.py
 ```
 
-### Features:
+### Three Unified Web Interfaces:
 1. **Chat UI (`/`)**: Mobile-first, ChatGPT-style responsive interface with real-time Server-Sent Events (SSE) token streaming.
-2. **Live Telemetry Dashboard (`/dashboard`)**:
-   - Live Decode Throughput (tokens/sec) & TPOT (inter-token latency in ms)
+2. **LLM Playground (`/playground`)**:
+   - **Single Model Workspace**: Sliders for `Temperature` ($0.0 \to 1.5$), `Top-P` ($0.05 \to 1.0$), `Max Tokens` ($128 \to 4096$), `Context Window` ($4\text{k} \to 32\text{k}$), and stop tokens.
+   - **Preset Templates**: 1-click loading for Coding, Reasoning, Summarization, Creative Prose, and JSON Extraction.
+   - **⚔️ Model Arena**: Concurrent side-by-side race comparing TTFT, tokens/sec throughput, and output quality across two models.
+   - **Export Code**: 1-click copy for `cURL` and `Python (requests)` snippets matching current playground parameters.
+3. **Live Telemetry Dashboard (`/dashboard`)**:
+   - Real-time Decode Throughput (tokens/sec) & TPOT (inter-token latency in ms)
    - Prefill Latency & Time-To-First-Token (TTFT)
-   - Real-time Unified Memory & VRAM allocation gauge
+   - Unified Memory & VRAM allocation gauge
    - Active loaded model & execution runner (`llamacpp Metal` vs `mlx`)
    - Connected client categorization (Local Wi-Fi vs Remote Tailscale 5G/VPN)
    - Live activity table with modality indicators (`🎵 Audio`, `🖼️ Vision`, `📝 Text`)
-3. **Multimodal Vision & Audio Ingestion**:
-   - Automatic client-side canvas downscaling ($\le 1024$px) to prevent context exhaustion.
-   - Built-in on-the-fly audio transcoder (`ensure_compatible_audio`) that ingests mobile voice memos (`.m4a`, `.mp3`, `.caf`, `.wav`) and downmixes to 16kHz mono WAV in ~15 ms before feeding to `sound_encoder`.
+
+### Multimodal Vision & Audio Ingestion:
+* Automatic client-side canvas downscaling ($\le 1024$px) to prevent context exhaustion.
+* Built-in on-the-fly audio transcoder (`ensure_compatible_audio`) that ingests mobile voice memos (`.m4a`, `.mp3`, `.caf`, `.wav`) and downmixes to 16kHz mono WAV in ~15 ms before feeding to `sound_encoder`.
 
 ---
 

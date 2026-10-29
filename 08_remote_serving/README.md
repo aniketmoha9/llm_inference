@@ -4,7 +4,37 @@ This guide explains how to turn your Apple M5 Mac into a dedicated, self-hosted 
 
 ---
 
-## 📊 Real-Time Inference Telemetry Dashboard
+## 🎛️ Three Unified Interfaces
+
+| Interface | URL | Purpose | Key Features |
+| :--- | :--- | :--- | :--- |
+| **Mobile Chat UI** | `http://<IP>:8000/` | Fast conversation | ChatGPT-style clean UI, auto-downscaled photos, audio attachments, SSE token streaming |
+| **LLM Playground** | `http://<IP>:8000/playground` | Parameter exploration & Arena | System prompt tuning, sliders (Temp, Top-P, Max Tokens, Context), presets, **Side-by-Side Model Arena**, 1-click code export (cURL/Python) |
+| **Telemetry Dashboard** | `http://<IP>:8000/dashboard` | Hardware & serving metrics | Live decode speed (tok/s), TPOT (ms), TTFT (ms), RAM/VRAM gauge, connected devices (Tailscale vs LAN) |
+
+---
+
+## 🎛️ LLM Playground Features (`/playground`)
+
+The Playground provides a simple, intuitive developer interface for testing and comparing models:
+
+1. **Single Model Exploration**:
+   * **System Prompt / Persona**: Collapsible instructions panel for setting behavior (e.g. Code Architect, JSON Extractor).
+   * **Inference Sliders**: Direct real-time control over `Temperature` ($0.0 \to 1.5$), `Top-P` ($0.05 \to 1.0$), `Max Tokens` ($128 \to 4096$), `Context Window` ($4\text{k} \to 32\text{k}$), and `Stop Sequences`.
+   * **Preset Templates**: 1-click presets for coding, reasoning, summarization, creative writing, JSON extraction, and audio analysis.
+   * **Live Telemetry Banner**: Displays real-time decode speed ($\text{tok/s}$), TTFT ($\text{ms}$), context tokens, output tokens, and stop reasons.
+   * **Export Code**: Generates clean copy-pasteable `cURL` commands and `Python` scripts matching your active playground settings.
+
+2. **⚔️ Side-by-Side Model Arena**:
+   * Send the same prompt concurrently to **Model A** (e.g. `bonsai-2:latest` - 2.5 GB Q2_0) and **Model B** (e.g. `nemotron-3.5-bolt:e4b-mxfp8` - 11 GB mxfp8).
+   * Watch both models stream in parallel and compare:
+     * **Time-to-First-Token (TTFT)**
+     * **Decode throughput (tokens/sec)**
+     * **Response quality and nuance**
+
+---
+
+## 📊 Real-Time Inference Telemetry Dashboard (`/dashboard`)
 
 A dedicated, remotely accessible dashboard is built directly into the server at `/dashboard`:
 
