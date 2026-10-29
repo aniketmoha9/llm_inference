@@ -4,13 +4,115 @@ This guide explains how to turn your Apple M5 Mac into a dedicated, self-hosted 
 
 ---
 
-## 🎛️ Three Unified Interfaces
+## 🎛️ Four Unified Interfaces
 
 | Interface | URL | Purpose | Key Features |
 | :--- | :--- | :--- | :--- |
 | **Mobile Chat UI** | `http://<IP>:8000/` | Fast conversation | ChatGPT-style clean UI, auto-downscaled photos, audio attachments, SSE token streaming |
 | **LLM Playground** | `http://<IP>:8000/playground` | Parameter exploration & Arena | System prompt tuning, sliders (Temp, Top-P, Max Tokens, Context), presets, **Side-by-Side Model Arena**, 1-click code export (cURL/Python) |
 | **Telemetry Dashboard** | `http://<IP>:8000/dashboard` | Hardware & serving metrics | Live decode speed (tok/s), TPOT (ms), TTFT (ms), RAM/VRAM gauge, connected devices (Tailscale vs LAN) |
+| **API Docs & Testing Console** | `http://<IP>:8000/docs` | Drop-in API integration | Interactive web tester, OpenAI SDK / cURL / Python / JS snippets, Cursor & Continue IDE setup |
+
+---
+
+## 🔌 Drop-in OpenAI-Compatible API Endpoints
+
+The server exposes drop-in OpenAI-compatible endpoints so you can connect your locally hosted models directly into external applications, scripts, agents, and IDEs (Cursor, Continue.dev, Aider, Open WebUI) from your LAN or anywhere via Tailscale.
+
+### Base URL:
+```text
+http://<your-mac-ip>:8000/v1
+```
+*(e.g., `http://192.168.1.11:8000/v1` locally or `http://<tailscale-ip>:8000/v1` over VPN)*
+
+### Supported Endpoints:
+
+| Method | Endpoint | Description | Compatible With |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/v1/chat/completions` | Multi-turn chat completion (`stream: true` or `false`) | Official OpenAI SDK, LangChain, LlamaIndex, Cursor, Continue |
+| `GET` | `/v1/models` | List all available local models | OpenAI client model discovery |
+| `POST` | `/api/generate` | Single prompt generation with raw token stats | Ollama native scripts, automation webhooks |
+| `GET` | `/api/metrics` | Real-time hardware telemetry and request history | Custom monitoring dashboards, Prometheus scrapers |
+| `GET` | `/docs` | Interactive Swagger-style documentation & testing console | Any web browser |
+
+---
+
+### 💻 Client Code Examples
+
+#### 1. Official OpenAI Python SDK
+Install: `pip install openai`
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="http://192.168.1.11:8000/v1",  # Or your Tailscale IP
+    api_key="not-needed"                     # Local server requires no API key
+)
+
+# Streaming Response
+stream = client.chat.completions.create(
+    model="bonsai-2:latest",
+    messages=[
+        {"role": "system", "content": "You are a concise engineering assistant."},
+        {"role": "user", "content": "Explain KV caching in two sentences."}
+    ],
+    temperature=0.2,
+    stream=True
+)
+
+for chunk in stream:
+    if chunk.choices and chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="", flush=True)
+print()
+```
+
+#### 2. cURL (Terminal / Bash)
+
+```bash
+# Non-streaming
+curl -X POST http://192.168.1.11:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "bonsai-2:latest",
+    "messages": [{"role": "user", "content": "What is 25 * 4?"}],
+    "temperature": 0.0
+  }'
+
+# Real-time SSE Streaming
+curl -N -X POST http://192.168.1.11:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "bonsai-2:latest",
+    "messages": [{"role": "user", "content": "List 3 advantages of quantization."}],
+    "stream": true
+  }'
+```
+
+#### 3. IDE Integration: Cursor & Continue.dev
+
+You can use your Apple Silicon Mac as your dedicated AI coding copilot in Cursor or VSCode:
+
+- **Continue.dev (`~/.continue/config.json`)**:
+  ```json
+  {
+    "models": [
+      {
+        "title": "Local Apple M5 (Bonsai-2)",
+        "provider": "openai",
+        "model": "bonsai-2:latest",
+        "apiBase": "http://192.168.1.11:8000/v1",
+        "apiKey": "none"
+      }
+    ]
+  }
+  ```
+- **Cursor Settings**:
+  - Open **Cursor Settings > Models > OpenAI API Key**.
+  - Enable **Override OpenAI Base URL**: Set to `http://192.168.1.11:8000/v1`.
+  - Add your model name (e.g. `bonsai-2:latest`).
+
+---
 
 ---
 

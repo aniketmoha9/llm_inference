@@ -179,13 +179,13 @@ For a 128k context window:
 
 ## 🌐 Private Remote Hosting, LLM Playground & Telemetry Dashboard
 
-Module [`08_remote_serving`](./08_remote_serving/) turns your machine into a 24/7 private AI inference server accessible globally from your mobile phone or another laptop:
+Module [`08_remote_serving`](./08_remote_serving/) turns your machine into a 24/7 private AI inference server accessible globally from your mobile phone, external laptops, or developer tools:
 
 ```bash
 python3 08_remote_serving/web_chat_server.py
 ```
 
-### Three Unified Web Interfaces:
+### Four Unified Interfaces:
 1. **Chat UI (`/`)**: Mobile-first, ChatGPT-style responsive interface with real-time Server-Sent Events (SSE) token streaming.
 2. **LLM Playground (`/playground`)**:
    - **Single Model Workspace**: Sliders for `Temperature` ($0.0 \to 1.5$), `Top-P` ($0.05 \to 1.0$), `Max Tokens` ($128 \to 4096$), `Context Window` ($4\text{k} \to 32\text{k}$), and stop tokens.
@@ -199,6 +199,11 @@ python3 08_remote_serving/web_chat_server.py
    - Active loaded model & execution runner (`llamacpp Metal` vs `mlx`)
    - Connected client categorization (Local Wi-Fi vs Remote Tailscale 5G/VPN)
    - Live activity table with modality indicators (`🎵 Audio`, `🖼️ Vision`, `📝 Text`)
+4. **Interactive API Documentation & Drop-in OpenAI Endpoints (`/docs`)**:
+   - **OpenAI Compatible Base URL**: `http://<IP>:8000/v1`
+   - **Endpoints**: `POST /v1/chat/completions` (streaming & non-streaming), `GET /v1/models`, `POST /api/generate`
+   - **Drop-in Support**: Use with official OpenAI Python/Node SDKs, Cursor IDE, Continue.dev, LangChain, or cURL with zero API key requirement.
+   - **Live Tester**: Test any model or parameter combination directly inside the interactive `/docs` UI.
 
 ### Multimodal Vision & Audio Ingestion:
 * Automatic client-side canvas downscaling ($\le 1024$px) to prevent context exhaustion.

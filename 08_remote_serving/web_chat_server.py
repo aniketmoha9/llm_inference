@@ -298,6 +298,7 @@ CHAT_HTML_TEMPLATE = """<!DOCTYPE html>
                 <option value="bonsai-2:latest">bonsai-2:latest</option>
             </select>
             <a href="/playground" class="dash-link-btn" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.4);" title="Open LLM Playground">🎛️ Playground</a>
+            <a href="/docs" class="dash-link-btn" style="background: rgba(34, 197, 94, 0.15); color: #4ade80; border-color: rgba(34, 197, 94, 0.4);" title="Open API Documentation">⚡ API Docs</a>
             <a href="/dashboard" class="dash-link-btn" title="View Live Telemetry Dashboard">📊 Metrics</a>
         </div>
     </header>
@@ -665,6 +666,7 @@ DASHBOARD_HTML_TEMPLATE = """<!DOCTYPE html>
             <div class="header-actions">
                 <button class="btn" onclick="fetchMetrics()">🔄 Refresh</button>
                 <a href="/playground" class="btn" style="border-color: rgba(168, 85, 247, 0.4); color: #c084fc;">🎛️ Playground</a>
+                <a href="/docs" class="btn" style="border-color: rgba(34, 197, 94, 0.4); color: #4ade80;">⚡ API Docs</a>
                 <a href="/" class="btn btn-primary">💬 Open Chat UI</a>
             </div>
         </header>
@@ -1036,6 +1038,7 @@ PLAYGROUND_HTML_TEMPLATE = """<!DOCTYPE html>
             <span class="badge">Inference Lab</span>
         </div>
         <div class="header-actions">
+            <a href="/docs" class="btn-nav" style="border-color: rgba(34, 197, 94, 0.4); color: #4ade80;">⚡ API Docs</a>
             <a href="/" class="btn-nav">💬 Chat UI</a>
             <a href="/dashboard" class="btn-nav">📊 Metrics Dashboard</a>
         </div>
@@ -1852,6 +1855,468 @@ print()`;
 """
 
 
+API_DOCS_HTML_TEMPLATE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LLM Host API Reference & Live Console</title>
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-card: #131b2e;
+            --bg-card-hover: #1b2640;
+            --border: #23314f;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --cyan: #38bdf8;
+            --green: #22c55e;
+            --purple: #c084fc;
+            --amber: #f59e0b;
+            --red: #f87171;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { background: var(--bg-primary); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+        
+        header { background: var(--bg-card); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; z-index: 10; }
+        .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; }
+        .brand .badge { background: linear-gradient(135deg, #22c55e, #10b981); color: #0a0e17; padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        .header-actions { display: flex; align-items: center; gap: 10px; }
+        .btn-nav { background: rgba(255, 255, 255, 0.05); color: var(--text-main); border: 1px solid var(--border); padding: 6px 12px; border-radius: 8px; font-size: 0.82rem; font-weight: 500; text-decoration: none; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-nav:hover { background: var(--bg-card-hover); border-color: var(--cyan); color: #fff; }
+
+        .container { max-width: 1300px; width: 100%; margin: 0 auto; padding: 24px 20px; display: flex; flex-direction: column; gap: 24px; }
+
+        /* Hero Banner */
+        .hero { background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(34, 197, 94, 0.05)); border: 1px solid var(--border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+        .hero-title { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 10px; }
+        .hero-desc { color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; max-width: 900px; }
+        
+        .base-url-box { background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-family: ui-monospace, Menlo, monospace; font-size: 0.9rem; flex-wrap: wrap; }
+        .base-url-val { color: var(--cyan); font-weight: 600; }
+        .copy-btn { background: rgba(56, 189, 248, 0.15); color: var(--cyan); border: 1px solid rgba(56, 189, 248, 0.3); padding: 4px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .copy-btn:hover { background: var(--cyan); color: #0a0e17; }
+
+        .feature-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+        .ftag { background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; color: #cbd5e1; display: inline-flex; align-items: center; gap: 6px; }
+
+        /* Two Column Content */
+        .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+        .card-title { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); padding-bottom: 8px; overflow-x: auto; }
+        .tab-btn { background: transparent; border: none; color: var(--text-muted); padding: 6px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+        .tab-btn.active { background: rgba(56, 189, 248, 0.15); color: var(--cyan); }
+
+        .code-box { background: #080c14; border: 1px solid var(--border); border-radius: 10px; padding: 14px; font-family: ui-monospace, Menlo, monospace; font-size: 0.82rem; color: #e2e8f0; line-height: 1.5; overflow-x: auto; white-space: pre-wrap; position: relative; }
+        .code-copy-btn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: var(--text-muted); padding: 3px 8px; border-radius: 5px; font-size: 0.72rem; cursor: pointer; }
+        .code-copy-btn:hover { color: #fff; border-color: var(--cyan); }
+
+        /* Live Tester */
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-label { font-size: 0.82rem; font-weight: 600; color: var(--text-muted); display: flex; justify-content: space-between; }
+        select.form-input, input.form-input, textarea.form-input { width: 100%; background: #080c14; color: #fff; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; font-size: 0.88rem; outline: none; transition: border-color 0.2s; }
+        select.form-input:focus, input.form-input:focus, textarea.form-input:focus { border-color: var(--cyan); }
+        textarea.form-input { min-height: 80px; resize: vertical; }
+
+        .btn-submit { background: linear-gradient(135deg, #0284c7, #2563eb); color: white; border: none; padding: 10px 18px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn-submit:hover { opacity: 0.95; transform: translateY(-1px); }
+
+        .response-box { background: #080c14; border: 1px solid var(--border); border-radius: 10px; padding: 12px; min-height: 140px; max-height: 320px; overflow-y: auto; font-family: ui-monospace, Menlo, monospace; font-size: 0.82rem; line-height: 1.5; color: #94a3b8; white-space: pre-wrap; }
+        
+        .res-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; }
+        .res-success { background: rgba(34, 197, 94, 0.15); color: var(--green); border: 1px solid rgba(34, 197, 94, 0.3); }
+        .res-error { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); }
+
+        /* Endpoints Table */
+        table.api-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        table.api-table th { text-align: left; padding: 10px 12px; background: rgba(0,0,0,0.3); color: var(--text-muted); font-size: 0.78rem; border-bottom: 1px solid var(--border); }
+        table.api-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+        .method-badge { font-weight: 800; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; font-family: ui-monospace, monospace; }
+        .method-post { background: rgba(56, 189, 248, 0.15); color: var(--cyan); border: 1px solid rgba(56, 189, 248, 0.3); }
+        .method-get { background: rgba(34, 197, 94, 0.15); color: var(--green); border: 1px solid rgba(34, 197, 94, 0.3); }
+
+        @media (max-width: 900px) {
+            .content-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="brand">
+            <span>⚡ Host API Reference</span>
+            <span class="badge">OpenAI Compatible</span>
+        </div>
+        <div class="header-actions">
+            <a href="/" class="btn-nav">💬 Chat UI</a>
+            <a href="/playground" class="btn-nav">🎛️ Playground</a>
+            <a href="/dashboard" class="btn-nav">📊 Metrics</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Hero Banner -->
+        <div class="hero">
+            <div class="hero-title">
+                <span>Direct LLM Inference API</span>
+                <span class="badge" style="background:#38bdf8; color:#0a0e17;">v1 REST & SSE</span>
+            </div>
+            <p class="hero-desc">
+                Your Apple Silicon Mac exposes standard OpenAI-compatible and native REST endpoints. 
+                Any SDK, tool, or IDE (Python <code>openai</code> SDK, LangChain, Cursor, Continue.dev, or cURL) 
+                can generate completions remotely over your local Wi-Fi or Tailscale network.
+            </p>
+            <div class="base-url-box">
+                <div>
+                    <span style="color:var(--text-muted);">OpenAI Base URL: </span>
+                    <span class="base-url-val" id="api-base-url">http://--/v1</span>
+                </div>
+                <button class="copy-btn" onclick="copyBaseUrl()">Copy URL</button>
+            </div>
+            <div class="feature-tags">
+                <span class="ftag">🔌 Drop-in OpenAI Compatibility</span>
+                <span class="ftag">⚡ Streaming SSE (Server-Sent Events)</span>
+                <span class="ftag">🌐 CORS Enabled for Web Apps</span>
+                <span class="ftag">🔒 Zero Auth Required (Local Network / Tailscale)</span>
+            </div>
+        </div>
+
+        <!-- Two Column: Quickstarts & Live Tester -->
+        <div class="content-grid">
+            
+            <!-- Column 1: Code Quickstarts -->
+            <div class="card">
+                <div class="card-title">🚀 Code Quickstarts</div>
+                
+                <div class="tabs">
+                    <button class="tab-btn active" id="tab-py-sdk" onclick="switchSnippet('py-sdk')">Python (OpenAI SDK)</button>
+                    <button class="tab-btn" id="tab-curl" onclick="switchSnippet('curl')">cURL</button>
+                    <button class="tab-btn" id="tab-py-req" onclick="switchSnippet('py-req')">Python (Requests)</button>
+                    <button class="tab-btn" id="tab-js" onclick="switchSnippet('js')">JavaScript</button>
+                    <button class="tab-btn" id="tab-ide" onclick="switchSnippet('ide')">Cursor / Continue</button>
+                </div>
+
+                <div class="code-box">
+                    <button class="code-copy-btn" onclick="copySnippetCode()">Copy</button>
+                    <div id="code-snippet-content"></div>
+                </div>
+            </div>
+
+            <!-- Column 2: Live API Console -->
+            <div class="card">
+                <div class="card-title">🧪 Live API Console</div>
+                
+                <div class="form-group">
+                    <label class="form-label">Endpoint</label>
+                    <select class="form-input" id="test-endpoint">
+                        <option value="/v1/chat/completions">POST /v1/chat/completions (OpenAI Compatible)</option>
+                        <option value="/api/generate">POST /api/generate (Native Single Prompt)</option>
+                        <option value="/v1/models">GET /v1/models (List Models)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="group-model">
+                    <label class="form-label">Model</label>
+                    <select class="form-input" id="test-model"></select>
+                </div>
+
+                <div class="form-group" id="group-prompt">
+                    <label class="form-label">Prompt</label>
+                    <textarea class="form-input" id="test-prompt" placeholder="Say hello and describe your architecture in one sentence."></textarea>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center;" id="group-stream">
+                    <label style="font-size:0.85rem; color:var(--text-muted); cursor:pointer;">
+                        <input type="checkbox" id="test-stream" checked> Enable Token Streaming (SSE)
+                    </label>
+                    <button class="btn-submit" onclick="executeApiTest()">▶ Send Request</button>
+                </div>
+
+                <div class="form-group" style="margin-top: 6px;">
+                    <div class="form-label">
+                        <span>Response</span>
+                        <div id="res-badge-wrap" style="display:none;">
+                            <span class="res-badge res-success" id="res-status-code">200 OK</span>
+                            <span style="font-size:0.75rem; color:var(--text-muted); margin-left:6px;" id="res-latency">180 ms</span>
+                        </div>
+                    </div>
+                    <div class="response-box" id="test-response">Response payload will appear here...</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Endpoints Reference Table -->
+        <div class="card">
+            <div class="card-title">📖 API Endpoints Reference</div>
+            
+            <table class="api-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Path</th>
+                        <th>Format</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="method-badge method-post">POST</span></td>
+                        <td><code>/v1/chat/completions</code></td>
+                        <td>OpenAI Chat API</td>
+                        <td>Universal chat completion endpoint. Supports <code>messages</code>, <code>temperature</code>, <code>stream: true/false</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method-badge method-get">GET</span></td>
+                        <td><code>/v1/models</code></td>
+                        <td>OpenAI List</td>
+                        <td>Returns loaded models in standard OpenAI <code>{"data": [{"id": "model:tag"}]}</code> schema.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method-badge method-post">POST</span></td>
+                        <td><code>/api/generate</code></td>
+                        <td>Ollama REST</td>
+                        <td>Native single-prompt generation endpoint. Supports raw <code>prompt</code>, images, and options.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method-badge method-get">GET</span></td>
+                        <td><code>/api/tags</code></td>
+                        <td>JSON List</td>
+                        <td>Returns installed models, quantization details, parameter counts, and capabilities.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method-badge method-get">GET</span></td>
+                        <td><code>/api/metrics</code></td>
+                        <td>JSON Telemetry</td>
+                        <td>Real-time hardware telemetry: decode tok/s, TPOT (ms), TTFT (ms), RAM usage, and active models.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script>
+        let currentTab = 'py-sdk';
+
+        // Load Base URL
+        const host = window.location.host;
+        document.getElementById('api-base-url').textContent = `http://${host}/v1`;
+
+        function copyBaseUrl() {
+            navigator.clipboard.writeText(`http://${host}/v1`);
+            alert("OpenAI Base URL copied: http://" + host + "/v1");
+        }
+
+        // Load Available Models
+        async function loadModels() {
+            try {
+                const res = await fetch('/api/tags');
+                const data = await res.json();
+                const sel = document.getElementById('test-model');
+                sel.innerHTML = '';
+                (data.models || []).forEach(m => {
+                    sel.add(new Option(m.name, m.name));
+                });
+            } catch (e) {
+                console.error("Failed to load models", e);
+            }
+        }
+        loadModels();
+
+        // Switch Snippet
+        function switchSnippet(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            renderSnippet();
+        }
+
+        function renderSnippet() {
+            const block = document.getElementById('code-snippet-content');
+            if (currentTab === 'py-sdk') {
+                block.textContent = `from openai import OpenAI
+
+# Point directly to your hosted Apple M5 server
+client = OpenAI(
+    base_url="http://${host}/v1",
+    api_key="not-needed"  # Any string works
+)
+
+response = client.chat.completions.create(
+    model="bonsai-2:latest",
+    messages=[
+        {"role": "system", "content": "You are a concise AI engineering assistant."},
+        {"role": "user", "content": "Explain KV Caching in two sentences."}
+    ],
+    temperature=0.7,
+    stream=True
+)
+
+for chunk in response:
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="", flush=True)
+print()`;
+            } else if (currentTab === 'curl') {
+                block.textContent = `curl -N http://${host}/v1/chat/completions \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{
+    "model": "bonsai-2:latest",
+    "messages": [
+      {"role": "user", "content": "Explain arithmetic intensity in LLM inference."}
+    ],
+    "stream": true,
+    "temperature": 0.7
+  }'`;
+            } else if (currentTab === 'py-req') {
+                block.textContent = `import requests
+
+url = "http://${host}/v1/chat/completions"
+payload = {
+    "model": "bonsai-2:latest",
+    "messages": [{"role": "user", "content": "Hello!"}],
+    "temperature": 0.7,
+    "stream": False
+}
+
+resp = requests.post(url, json=payload)
+data = resp.json()
+print("Answer:", data["choices"][0]["message"]["content"])
+print("Tokens used:", data["usage"])`;
+            } else if (currentTab === 'js') {
+                block.textContent = `import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "http://${host}/v1",
+  apiKey: "not-needed",
+  dangerouslyAllowBrowser: true
+});
+
+const completion = await client.chat.completions.create({
+  model: "bonsai-2:latest",
+  messages: [{ role: "user", content: "Count from 1 to 5." }],
+  stream: true,
+});
+
+for await (const chunk of completion) {
+  process.stdout.write(chunk.choices[0]?.delta?.content || "");
+}`;
+            } else if (currentTab === 'ide') {
+                block.textContent = `// In Cursor or Continue.dev config (~/.continue/config.json):
+{
+  "models": [
+    {
+      "title": "Private Apple M5 Model",
+      "provider": "openai",
+      "model": "bonsai-2:latest",
+      "apiBase": "http://${host}/v1",
+      "apiKey": "not-needed"
+    }
+  ]
+}`;
+            }
+        }
+        renderSnippet();
+
+        function copySnippetCode() {
+            const text = document.getElementById('code-snippet-content').textContent;
+            navigator.clipboard.writeText(text);
+            alert("Code snippet copied!");
+        }
+
+        // Live API Execution
+        document.getElementById('test-endpoint').addEventListener('change', function() {
+            const isModels = this.value === '/v1/models';
+            document.getElementById('group-model').style.display = isModels ? 'none' : 'flex';
+            document.getElementById('group-prompt').style.display = isModels ? 'none' : 'flex';
+            document.getElementById('group-stream').style.display = isModels ? 'none' : 'flex';
+        });
+
+        async function executeApiTest() {
+            const endpoint = document.getElementById('test-endpoint').value;
+            const model = document.getElementById('test-model').value || 'bonsai-2:latest';
+            const prompt = document.getElementById('test-prompt').value.trim() || 'Hello!';
+            const isStream = document.getElementById('test-stream').checked;
+            const outBox = document.getElementById('test-response');
+            const badgeWrap = document.getElementById('res-badge-wrap');
+            const statusCode = document.getElementById('res-status-code');
+            const latency = document.getElementById('res-latency');
+
+            outBox.textContent = 'Sending request...';
+            badgeWrap.style.display = 'none';
+
+            const t0 = performance.now();
+            try {
+                if (endpoint === '/v1/models') {
+                    const res = await fetch('/v1/models');
+                    const dur = Math.round(performance.now() - t0);
+                    badgeWrap.style.display = 'inline-flex';
+                    statusCode.textContent = `${res.status} ${res.statusText}`;
+                    statusCode.className = res.ok ? 'res-badge res-success' : 'res-badge res-error';
+                    latency.textContent = `${dur} ms`;
+                    const data = await res.json();
+                    outBox.textContent = JSON.stringify(data, null, 2);
+                } else if (endpoint === '/v1/chat/completions') {
+                    const payload = {
+                        model: model,
+                        messages: [{ role: 'user', content: prompt }],
+                        stream: isStream,
+                        temperature: 0.7
+                    };
+                    const res = await fetch('/v1/chat/completions', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const dur = Math.round(performance.now() - t0);
+                    badgeWrap.style.display = 'inline-flex';
+                    statusCode.textContent = `${res.status} ${res.statusText}`;
+                    statusCode.className = res.ok ? 'res-badge res-success' : 'res-badge res-error';
+                    latency.textContent = `${dur} ms`;
+
+                    if (isStream) {
+                        outBox.textContent = '';
+                        const reader = res.body.getReader();
+                        const decoder = new TextDecoder('utf-8');
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+                            outBox.textContent += decoder.decode(value);
+                            outBox.scrollTop = outBox.scrollHeight;
+                        }
+                    } else {
+                        const data = await res.json();
+                        outBox.textContent = JSON.stringify(data, null, 2);
+                    }
+                } else if (endpoint === '/api/generate') {
+                    const payload = { model: model, prompt: prompt, stream: false };
+                    const res = await fetch('/api/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const dur = Math.round(performance.now() - t0);
+                    badgeWrap.style.display = 'inline-flex';
+                    statusCode.textContent = `${res.status} ${res.statusText}`;
+                    statusCode.className = res.ok ? 'res-badge res-success' : 'res-badge res-error';
+                    latency.textContent = `${dur} ms`;
+                    const data = await res.json();
+                    outBox.textContent = JSON.stringify(data, null, 2);
+                }
+            } catch (err) {
+                outBox.textContent = 'Request Error: ' + err.message;
+            }
+        }
+    </script>
+</body>
+</html>
+"""
+
+
 # ==============================================================================
 # HTTP Request Handler
 # ==============================================================================
@@ -1868,7 +2333,7 @@ class RemoteLLMHandler(BaseHTTPRequestHandler):
     def end_headers(self):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
         super().end_headers()
 
     def do_OPTIONS(self):
@@ -1893,6 +2358,27 @@ class RemoteLLMHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
             self.wfile.write(PLAYGROUND_HTML_TEMPLATE.encode("utf-8"))
+
+        elif self.path == "/docs" or self.path == "/api":
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(API_DOCS_HTML_TEMPLATE.encode("utf-8"))
+
+        elif self.path == "/v1/models":
+            try:
+                req = urllib.request.Request(f"{OLLAMA_BASE_URL}/v1/models")
+                with urllib.request.urlopen(req) as resp:
+                    data = resp.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(data)
+            except Exception as e:
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
 
         elif self.path == "/api/metrics":
             snapshot = METRICS.get_snapshot()
@@ -1922,7 +2408,166 @@ class RemoteLLMHandler(BaseHTTPRequestHandler):
             self.end_headers()
 
     def do_POST(self):
-        if self.path == "/api/stream_chat":
+        if self.path == "/v1/chat/completions":
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length)
+            req_data = json.loads(body.decode("utf-8"))
+
+            client_ip = self.client_address[0]
+            model = req_data.get("model", "bonsai-2:latest")
+            is_stream = bool(req_data.get("stream", False))
+            if "stream" not in req_data:
+                req_data["stream"] = False
+                body = json.dumps(req_data).encode("utf-8")
+
+            prompt_preview = ""
+            for m in reversed(req_data.get("messages", [])):
+                if m.get("role") == "user":
+                    c = m.get("content", "")
+                    prompt_preview = c if isinstance(c, str) else str(c)
+                    break
+
+            METRICS.record_request(client_ip, model, prompt_preview, "text")
+            log_event(f"[OpenAI API /v1/chat/completions] Client: {client_ip} | Model: {model} | Prompt: {prompt_preview[:50]}... | Stream: {is_stream}")
+
+            try:
+                ollama_req = urllib.request.Request(
+                    f"{OLLAMA_BASE_URL}/v1/chat/completions",
+                    data=body,
+                    headers={"Content-Type": "application/json"}
+                )
+
+                if is_stream:
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/event-stream")
+                    self.send_header("Cache-Control", "no-cache")
+                    self.send_header("Connection", "keep-alive")
+                    self.end_headers()
+
+                    t0 = time.perf_counter()
+                    token_count = 0
+                    with urllib.request.urlopen(ollama_req) as resp:
+                        for line in resp:
+                            if not line:
+                                continue
+                            try:
+                                self.wfile.write(line)
+                                self.wfile.flush()
+                                line_str = line.decode("utf-8", errors="replace").strip()
+                                if line_str.startswith("data: ") and line_str != "data: [DONE]":
+                                    token_count += 1
+                            except (BrokenPipeError, ConnectionResetError):
+                                return
+
+                    dur = time.perf_counter() - t0
+                    tps = (token_count / dur) if dur > 0 else 0
+                    tpot = (dur / token_count * 1000.0) if token_count > 0 else 0
+                    METRICS.record_completion(client_ip, model, prompt_preview, "text",
+                                              0, 0, token_count, tps, tpot)
+                    log_event(f"[API Finished] Client: {client_ip} | Streamed: {token_count} tokens ({tps:.1f} tok/s)")
+
+                else:
+                    t0 = time.perf_counter()
+                    with urllib.request.urlopen(ollama_req) as resp:
+                        resp_data = resp.read()
+                    dur = time.perf_counter() - t0
+
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(resp_data)
+
+                    try:
+                        res_json = json.loads(resp_data.decode("utf-8"))
+                        usage = res_json.get("usage", {})
+                        p_cnt = usage.get("prompt_tokens", 0)
+                        d_cnt = usage.get("completion_tokens", 0)
+                        tps = (d_cnt / dur) if dur > 0 else 0
+                        tpot = (dur / d_cnt * 1000.0) if d_cnt > 0 else 0
+                        METRICS.record_completion(client_ip, model, prompt_preview, "text",
+                                                  p_cnt, 0, d_cnt, tps, tpot)
+                        log_event(f"[API Finished] Client: {client_ip} | Tokens: {d_cnt} | Time: {dur:.2f}s ({tps:.1f} tok/s)")
+                    except Exception:
+                        pass
+
+            except urllib.error.HTTPError as e:
+                err_body = e.read().decode("utf-8", errors="replace")
+                log_event(f"[API Error] HTTP Error {e.code}: {err_body}")
+                self.send_response(e.code)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(err_body.encode("utf-8"))
+            except Exception as e:
+                log_event(f"[API Error] {e}")
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+
+        elif self.path == "/api/generate":
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length)
+            req_data = json.loads(body.decode("utf-8"))
+
+            client_ip = self.client_address[0]
+            model = req_data.get("model", "bonsai-2:latest")
+            prompt = req_data.get("prompt", "")
+            is_stream = bool(req_data.get("stream", False))
+            # Ollama defaults to stream: true unless stream: false is explicitly passed
+            req_data["stream"] = is_stream
+            body = json.dumps(req_data).encode("utf-8")
+
+            METRICS.record_request(client_ip, model, prompt, "text")
+            log_event(f"[Native API /api/generate] Client: {client_ip} | Model: {model} | Prompt: {prompt[:50]}...")
+
+            try:
+                ollama_req = urllib.request.Request(
+                    f"{OLLAMA_BASE_URL}/api/generate",
+                    data=body,
+                    headers={"Content-Type": "application/json"}
+                )
+
+                if is_stream:
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/x-ndjson")
+                    self.send_header("Cache-Control", "no-cache")
+                    self.end_headers()
+                    with urllib.request.urlopen(ollama_req) as resp:
+                        for line in resp:
+                            if not line:
+                                continue
+                            try:
+                                self.wfile.write(line)
+                                self.wfile.flush()
+                            except (BrokenPipeError, ConnectionResetError):
+                                return
+                else:
+                    t0 = time.perf_counter()
+                    with urllib.request.urlopen(ollama_req) as resp:
+                        resp_data = resp.read()
+                    dur = time.perf_counter() - t0
+
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(resp_data)
+                    try:
+                        res_json = json.loads(resp_data.decode("utf-8"))
+                        p_cnt = res_json.get("prompt_eval_count", 0)
+                        d_cnt = res_json.get("eval_count", 0)
+                        tps = (d_cnt / dur) if dur > 0 else 0
+                        tpot = (dur / d_cnt * 1000.0) if d_cnt > 0 else 0
+                        METRICS.record_completion(client_ip, model, prompt, "text",
+                                                  p_cnt, 0, d_cnt, tps, tpot)
+                    except Exception:
+                        pass
+            except Exception as e:
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+
+        elif self.path == "/api/stream_chat":
             content_length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(content_length)
             req_data = json.loads(body.decode("utf-8"))
